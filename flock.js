@@ -73,6 +73,47 @@ class Flock {
         }
     }
 
+    /// alignment, cohesion, separation in one cycle
+    applyForces(boids, boid) {
+        const { alignmentFactor, centeringFactor, separationDistance, separationFactor } = this.settings;
+        const avgVelocity = createVector(0, 0);
+        const center = createVector(0, 0);
+        const target = createVector(0, 0);
+        let neighboursCount = 0;
+
+        boids.forEach(other => {
+            if (this.isInViewRange(boid, other)) {
+                avgVelocity.add(other.velocity);
+                center.add(other.position);
+                neighboursCount++;
+            }
+
+            const distance = boid.position.dist(other.position);
+            if (boid !== other && distance < separationDistance) {
+                target.add(
+                    p5.Vector.sub(boid.position, other.position)
+                );
+            }
+        });
+
+        if (neighboursCount > 0) {
+            avgVelocity.div(neighboursCount)
+                .sub(boid.velocity)
+                .mult(alignmentFactor);
+            boid.velocity.add(avgVelocity);
+
+            center.div(neighboursCount)
+                .sub(boid.position)
+                .mult(centeringFactor);
+            boid.velocity.add(center);
+
+            target.mult(separationFactor);
+            boid.velocity.add(target);
+
+            this.limitSpeed(boid);
+        }
+    }
+
     alignment(boids, boid) {
         const { alignmentFactor } = this.settings;
         const avgVelocity = createVector(0, 0);
