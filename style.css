@@ -5,16 +5,6 @@
     box-sizing: border-box;
 }
 
-body > input:first-of-type {
-    margin-left: 20px;
-}
-
-div {
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-}
-
-label {
-    padding-left: 20px;
+html, body {
+    height: 100%;
 }

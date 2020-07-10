@@ -2,53 +2,48 @@ let screenSize;
 let edgesRect;
 
 const flocks = [];
-const boidsCount = 30;
-const edgeFactor = 0.8;
-const edgeMargin = 150;
-let perceptionDistance = 120;
-let separationDistance = 40;
-let alignmentFactor = 0.05;
-let centeringFactor = 0.01;
-let separationFactor = 0.1;
-let minSpeed = 3;
-let maxSpeed = 15;
 
-let alignmentFactorSlider;
-let centeringFactorSlider;
-let separationFactorSlider;
+const settings = {
+    count: 30,
+    minSpeed: 3,
+    maxSpeed: 11,
+    edgeFactor: 0.8,
+    edgeMargin: 150,
+    perceptionDistance: 200,
+    separationDistance: 80,
+    alignmentFactor: 0.01,
+    centeringFactor: 0.01,
+    separationFactor: 0.01,
+    showPerception: false,
+    showSeparation: false,
+};
 
-let perceptionCheckbox;
-let separationCheckbox;
+const gui = new dat.GUI();
 
 function updateScreenSize() {
     const bodyRect = document.body.getBoundingClientRect();
     screenSize = {
         width: bodyRect.width,
-        height: 500,
-    };
-    edgesRect = {
-        left: edgeMargin,
-        top: edgeMargin,
-        right: screenSize.width - edgeMargin,
-        bottom: screenSize.height - edgeMargin,
+        height: bodyRect.height,
     };
     resizeCanvas(screenSize.width, screenSize.height)
 }
 
-function generateFlock(count, color) {
-    flocks.push(new Flock(count, color));
+function generateGUISettings() {
+    gui.add(settings, 'count', 10, 100).step(10);
+    gui.add(settings, 'maxSpeed', 0, 30).step(1);
+    gui.add(settings, 'perceptionDistance', 0, 300).step(10);
+    gui.add(settings, 'separationDistance', 0, 200).step(10);
+    gui.add(settings, 'alignmentFactor', 0, 0.1).step(0.01);
+    gui.add(settings, 'centeringFactor', 0, 0.05).step(0.01);
+    gui.add(settings, 'separationFactor', 0, 0.1).step(0.01);
+
+    gui.add(settings, 'showPerception');
+    gui.add(settings, 'showSeparation');
 }
 
-function generateTestBoids() {
-    boids.push(new Boid(
-        createVector(screenSize.width/2 - 40, screenSize.height/2),
-        createVector(10, 0),
-    ));
-    boids.push(new Boid(
-        createVector(screenSize.width/2 + 40, screenSize.height/2),
-        createVector(-10, 0),
-    ));
-    noLoop();
+function generateFlock(settings, color) {
+    flocks.push(new Flock(settings, color));
 }
 
 function setup() {
@@ -57,18 +52,10 @@ function setup() {
 
     window.addEventListener('resize', updateScreenSize);
 
-    alignmentFactorSlider = createSlider(0, 0.01, 0.001, 0.001);
-    centeringFactorSlider = createSlider(0, 0.05, 0.01, 0.01);
-    separationFactorSlider = createSlider(0, 0.1, 0.01, 0.01);
-    maxSpeedSlider = createSlider(0, 30, 11, 1);
-    perceptionDistanceSlider = createSlider(0, 300, 140, 10);
-    separationDistanceSlider = createSlider(0, 200, 80, 10);
+    generateGUISettings();
 
-    perceptionCheckbox = createCheckbox('perception', false);;
-    separationCheckbox = createCheckbox('separation', false);;
-
-    generateFlock(boidsCount, '#fff');
-    generateFlock(boidsCount, '#ffa21e');
+    generateFlock(settings, '#fff');
+    generateFlock(settings, '#ffa21e');
 
     draw();
 }
@@ -80,25 +67,24 @@ function clearCanvas() {
 }
 
 function draw() {
-    alignmentFactor = alignmentFactorSlider.value();
-    centeringFactor = centeringFactorSlider.value();
-    separationFactor = separationFactorSlider.value();
-    maxSpeed = maxSpeedSlider.value();
-    perceptionDistance = perceptionDistanceSlider.value();
-    separationDistance = separationDistanceSlider.value();
-    
     clearCanvas();
 
-    flocks.forEach(flock => {
-        const showPerception= perceptionCheckbox.checked();
-        const showSeparation= separationCheckbox.checked();
-        flock.draw(showPerception, showSeparation);
-    });
+    flocks.forEach(flock => flock.draw());
 
     update();
 }
 
 function update() {
+    edgesRect = {
+        left: settings.edgeMargin,
+        top: settings.edgeMargin,
+        right: screenSize.width - settings.edgeMargin,
+        bottom: screenSize.height - settings.edgeMargin,
+    };
+
     const combinedBoids = flocks.reduce((all, flock) => [...all, ...flock.boids], []);
-    flocks.forEach(flock => flock.update(combinedBoids, edgesRect));
+    flocks.forEach(flock => {
+        flock.updateSettings(settings);
+        flock.update(combinedBoids, edgesRect)
+    });
 }
